@@ -6,7 +6,8 @@
   "include-component-in-tag": false,
   "packages": {
     ".": {
-      "package-name": "comfyui-mage"
+      "package-name": "comfyui-mage",
+      "initial-version": "0.0.1"
     }
   }
 }
