@@ -65,7 +65,7 @@ Pull requests are squash-merged, and their titles become [Conventional Commit](h
 **Maintainer setup**, once:
 
 1. A GitHub App for the release bot, installed on this repository. Store its ID in the `MAGE_BOT_APP_ID` Actions variable and its private key in the `MAGE_BOT_PRIVATE_KEY` Actions secret.
-2. A Comfy Registry publisher with the ID `mage-space`. Store its API key in the `REGISTRY_ACCESS_TOKEN` secret of the `comfy-registry` environment.
+2. A Comfy Registry publisher with the ID `mage-space`. Store its API key in the `REGISTRY_ACCESS_TOKEN` secret of the `comfy-registry` environment. To publish an existing tag, such as the first release `v0.0.0`, run the Release workflow by hand with that tag (`gh workflow run release.yml -f tag=v0.0.0`).
 3. Submit the repository to the [ComfyUI-Manager node list](https://github.com/Comfy-Org/ComfyUI-Manager#how-to-register-your-custom-node-into-comfyui-manager).
 
 ## License
