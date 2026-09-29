@@ -1,0 +1,27 @@
+[project]
+name = "comfyui-mage"
+version = "0.0.0"
+description = "Generate images, video, and audio in ComfyUI with Mage models such as Mango, Cherry, and Seed Audio, through the Mage API."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = ["mage-space>=0.0.0,<0.1"]
+classifiers = ["Development Status :: 4 - Beta"]
+
+[project.urls]
+Repository = "https://github.com/mage-space/ComfyUI-Mage"
+Documentation = "https://docs.mage.space/api/overview"
+"Bug Tracker" = "https://github.com/mage-space/ComfyUI-Mage/issues"
+
+[tool.comfy]
+PublisherId = "mage-space"
+DisplayName = "Mage"
+Icon = ""
+includes = []
+
+[tool.ruff]
+line-length = 140
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S102", "S307"]

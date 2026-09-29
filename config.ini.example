@@ -1,0 +1,5 @@
+# Copy this file to config.ini (next to it) and paste your Mage API key.
+# Create a key at https://www.mage.space/api?tab=api-keys.
+# The MAGE_API_KEY environment variable, when set, takes precedence.
+[mage]
+api_key =
