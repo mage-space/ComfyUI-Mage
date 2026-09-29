@@ -12,7 +12,7 @@ from typing import Any
 import httpx
 from comfy import model_management
 from comfy_execution.graph_utils import ExecutionBlocker
-from mage_space import AsyncMage, MageError
+from mage_space import AsyncMage, Mage, MageError
 from mage_space.types import ARCHITECTURES
 from server import PromptServer
 
@@ -82,12 +82,26 @@ async def upload_all(
     }
 
 
+def submit(mage: AsyncMage, architecture: str, config: dict[str, Any]) -> dict[str, Any]:
+    with Mage(api_key=mage.api_key, base_url=mage.base_url) as blocking:
+        return blocking.generate(architecture, config)
+
+
 async def generate(mage: AsyncMage, architecture: str, config: dict[str, Any], node_id: str | None) -> dict[str, Any]:
     """Submits a generation and waits for it. Interrupting the queue cancels the
     request (its Gems are not returned). Returns the completed request."""
     # Uploads take time; a Stop pressed meanwhile must not start a paid run.
     model_management.throw_exception_if_processing_interrupted()
-    request = await mage.generate(architecture, config)
+    # If ComfyUI cancels this node while the submission is in flight, Mage may
+    # already have accepted it. Submit on a thread: ComfyUI's shutdown cancels
+    # every asyncio task, but not a thread, so the job's id always comes back.
+    submission = asyncio.get_running_loop().run_in_executor(None, submit, mage, architecture, config)
+    try:
+        request = await asyncio.shield(submission)
+    except asyncio.CancelledError:
+        with contextlib.suppress(MageError):
+            await mage.requests.cancel((await submission)["request_id"])
+        raise
     request_id = request["request_id"]
     started = time.monotonic()
     gems = request["billing"]["gems_charged"]
