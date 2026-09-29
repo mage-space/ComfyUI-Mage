@@ -85,6 +85,8 @@ async def upload_all(
 async def generate(mage: AsyncMage, architecture: str, config: dict[str, Any], node_id: str | None) -> dict[str, Any]:
     """Submits a generation and waits for it. Interrupting the queue cancels the
     request (its Gems are not returned). Returns the completed request."""
+    # Uploads take time; a Stop pressed meanwhile must not start a paid run.
+    model_management.throw_exception_if_processing_interrupted()
     request = await mage.generate(architecture, config)
     request_id = request["request_id"]
     started = time.monotonic()
@@ -97,14 +99,18 @@ async def generate(mage: AsyncMage, architecture: str, config: dict[str, Any], n
 
     report(request)
     waiting = asyncio.ensure_future(mage.requests.wait(request, on_update=report))
-    while not waiting.done():
-        await asyncio.wait({waiting}, timeout=0.5)
-        if model_management.processing_interrupted():
-            waiting.cancel()
-            with contextlib.suppress(MageError):
-                await mage.requests.cancel(request_id)
+    try:
+        while not waiting.done():
+            await asyncio.wait({waiting}, timeout=0.5)
             model_management.throw_exception_if_processing_interrupted()
-    final = waiting.result()
+        final = waiting.result()
+    except (model_management.InterruptProcessingException, asyncio.CancelledError):
+        # The first Mage node to see Stop raises the interrupt, which clears it;
+        # ComfyUI then cancels the other running nodes, so both paths end here.
+        waiting.cancel()
+        with contextlib.suppress(MageError):
+            await mage.requests.cancel(request_id)
+        raise
     if final["status"] != "completed":
         error = final.get("error") or {"code": "cancelled", "message": "The request was cancelled."}
         raise RuntimeError(f"Mage request {request_id} {final['status']} ({error['code']}): {error['message']}")
