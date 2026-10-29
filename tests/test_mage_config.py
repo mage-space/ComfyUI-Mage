@@ -1,6 +1,6 @@
 import pytest
 
-from mage_config import build_config, load_api_key, option_inputs, parse_extra_config
+from mage_config import build_config, failure_message, load_api_key, option_inputs, parse_extra_config
 
 
 def test_api_key_prefers_the_environment(tmp_path):
@@ -70,3 +70,30 @@ def test_empty_extra_config(text):
 def test_bad_extra_config_is_refused(text):
     with pytest.raises(ValueError, match="extra_config"):
         parse_extra_config(text)
+
+
+def test_a_provider_block_says_why_and_what_to_change():
+    message = "The model's provider refused a real person or celebrity in the prompt or images. Any gems charged were refunded."
+    request = {
+        "request_id": "r1",
+        "status": "failed",
+        "error": {"code": "content_blocked", "message": message, "reason": "likeness", "stage": "input"},
+    }
+
+    assert failure_message(request) == (
+        f"Mage request r1 failed (content_blocked: likeness): {message} Remove real people from the prompt and images."
+    )
+
+
+def test_an_unknown_block_reason_reads_as_unspecified():
+    request = {"request_id": "r1", "status": "failed", "error": {"code": "content_blocked", "message": "Blocked.", "reason": "new"}}
+
+    assert failure_message(request).endswith("Blocked. Reword the prompt or change the images.")
+
+
+def test_other_failures_show_the_api_message():
+    failed = {"request_id": "r1", "status": "failed", "error": {"code": "generation_failed", "message": "Try again."}}
+    cancelled = {"request_id": "r2", "status": "cancelled", "error": None}
+
+    assert failure_message(failed) == "Mage request r1 failed (generation_failed): Try again."
+    assert failure_message(cancelled) == "Mage request r2 cancelled (cancelled): The request was cancelled."
