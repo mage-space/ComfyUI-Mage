@@ -1,6 +1,6 @@
 [project]
 name = "comfyui-mage"
-version = "0.0.0"
+version = "0.0.1"
 description = "Generate images, video, and audio in ComfyUI with Mage models such as Mango, Cherry, and Seed Audio, through the Mage API."
 readme = "README.md"
 license = { file = "LICENSE" }
