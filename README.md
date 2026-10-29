@@ -46,6 +46,7 @@ Saved characters and references work as they do on mage.space: mention them by `
 - The node shows the request's status and the Gems it cost.
 - Interrupting the queue cancels the Mage request. Cancelled runs are not refunded.
 - A model that refuses a combination of options, or an account without enough Gems, fails the node with the API's message before any Gems are spent.
+- Some models run on an external provider that can refuse a request: a real person, copyrighted material, mature content, and so on. The node then fails with the reason and what to change, and the Gems are refunded. Running the same inputs again usually gets the same block, so change them or try another model with **Mage Generate**.
 
 ## Privacy
 

@@ -17,7 +17,7 @@ from mage_space.types import ARCHITECTURES
 from server import PromptServer
 
 from . import mage_media as media
-from .mage_config import KEY_HELP, build_config, check_media, load_api_key, option_inputs, parse_extra_config
+from .mage_config import KEY_HELP, build_config, check_media, failure_message, load_api_key, option_inputs, parse_extra_config
 
 CATEGORY = "Mage"
 MAX_SEED = 2**31 - 1
@@ -126,8 +126,7 @@ async def generate(mage: AsyncMage, architecture: str, config: dict[str, Any], n
             await mage.requests.cancel(request_id)
         raise
     if final["status"] != "completed":
-        error = final.get("error") or {"code": "cancelled", "message": "The request was cancelled."}
-        raise RuntimeError(f"Mage request {request_id} {final['status']} ({error['code']}): {error['message']}")
+        raise RuntimeError(failure_message(final))
     progress(node_id, f"Mage: done in {int(time.monotonic() - started)}s ({gems} gems)")
     return final
 

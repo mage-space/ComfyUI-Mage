@@ -1,6 +1,7 @@
 """Pure helpers for the Mage nodes: API key lookup, widget options from the
-SDK's copy of the API reference, and request config assembly. Nothing here
-imports ComfyUI or torch, so it is unit tested on its own."""
+SDK's copy of the API reference, request config assembly, and the message a
+failed request shows. Nothing here imports ComfyUI or torch, so it is unit
+tested on its own."""
 
 from __future__ import annotations
 
@@ -20,6 +21,17 @@ KEY_HELP = (
     "the MAGE_API_KEY environment variable before starting ComfyUI, or copy "
     f"config.ini.example to {CONFIG_FILE} and put the key there."
 )
+
+# What to change when a model's provider refused a request, by the error's
+# `reason`. Running the same inputs again usually gets the same block.
+BLOCK_HINTS = {
+    "likeness": "Remove real people from the prompt and images.",
+    "ip": "Describe an original design instead of a character, brand, artist, or lyrics.",
+    "nsfw": "Try another model, or soften the request.",
+    "minors": "Make sure everyone depicted is clearly an adult.",
+    "audio": "Remove music or voices from the inputs, or generate without audio.",
+    "unspecified": "Reword the prompt or change the images.",
+}
 
 
 def load_api_key(environ: Mapping[str, str] = os.environ, config_file: Path = CONFIG_FILE) -> str | None:
@@ -129,3 +141,16 @@ def build_config(
             config["video"] = video
     config.update(extra or {})
     return config
+
+
+def failure_message(request: Mapping[str, Any]) -> str:
+    """The node error for a request that failed or was cancelled. When the
+    model's provider refused it, the error names the reason and what to change;
+    a reason newer than this list reads as unspecified."""
+    error = request.get("error") or {"code": "cancelled", "message": "The request was cancelled."}
+    reason = error.get("reason")
+    label = f"{error['code']}: {reason}" if reason else error["code"]
+    message = f"Mage request {request['request_id']} {request['status']} ({label}): {error['message']}"
+    if reason:
+        message += f" {BLOCK_HINTS.get(reason, BLOCK_HINTS['unspecified'])}"
+    return message
